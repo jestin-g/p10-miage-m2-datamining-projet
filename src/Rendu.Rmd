@@ -1,0 +1,163 @@
+---
+title: "Projet Data Camp: Cinema"
+output: html_document
+---
+Master 2 Miage
+2021-2021
+
+Alexis Sidate - Gabriel Jestin
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+library(corrplot)
+library(cowplot)
+library(ggplot2)
+library(sqldf)
+library(tidyverse)
+library(raster)
+library(priceR)
+library(knitr)
+library(plotrix)
+
+cinema <- read.table(file="../data/cinema.csv", header=TRUE, sep=",", encoding="UTF-8")
+
+# Récupération des données carto graphique des régions de France
+FranceFormes <- getData(name="GADM", country="FRA", level=1)
+
+# créer cinéma par région
+cinema_par_region <- cinema %>% 
+  dplyr::select(NomRegion, Population, NbEntree, Recettes, NbSeance, NbCommuneEquipee, NbEtablissement, NbSalle, NbFauteuil, NBArtEtEssai, NbMultiplex) %>% 
+  group_by(NomRegion) %>% 
+  summarise(Population = sum(Population),
+            NbEntree = sum(NbEntree),
+            Recettes = sum(Recettes),
+            NbSeance = sum(NbSeance),
+            NbCommuneEquipee = sum(NbCommuneEquipee),
+            NbEtablissement = sum(NbEtablissement),
+            NbSalle = sum(NbSalle),
+            NbFauteuil = sum(NbFauteuil),
+            NBArtEtEssai = sum(NBArtEtEssai),
+            NbMultiplex = sum(NbMultiplex),
+            )
+
+cinema_par_region_sans_IDF_Corse <- cinema_par_region %>% 
+  subset(NomRegion != "Île-de-France") %>% 
+  subset(NomRegion != "Corse")
+
+cinema_par_region_sans_IDF <- cinema_par_region %>% 
+  subset(NomRegion != "Île-de-France")
+
+```
+
+## Nombre de cinémas
+
+```{r NbEtablissementParRegion, echo=FALSE}
+# Calcul nombre d'établissement par Région
+nbEtablissementParRegion <- cinema %>%
+  dplyr::select(NomRegion, NbEtablissement) %>%
+  group_by(NomRegion) %>% summarise(NbEtablissement = sum (NbEtablissement))
+
+# Affichage
+idxRegion <- match(FranceFormes$NAME_1, nbEtablissementParRegion$NomRegion)
+FranceFormes$NbEtablissement <- nbEtablissementParRegion[idxRegion, "NbEtablissement"]
+couleurs <- colorRampPalette(c('white', 'yellow'))
+spplot(FranceFormes, "NbEtablissement", col.regions=couleurs(30),  main=list(label="Nombre de cinéma",cex=.8))
+```
+
+Le nombre de cinéma par région...
+
+```{r NbEtablissementParRegionParHabitant, echo=FALSE}
+# Calcul nombre de cinéma par habitant par région
+nbEtablissementParHabitantParRegion <- cinema %>%
+  dplyr::select(NomRegion, NbEtablissement, Population) %>%
+  group_by(NomRegion) %>%
+  summarise(NbEtablissement = sum(NbEtablissement), Population = sum(Population)) %>% 
+  mutate(NbEtablissementParHabitant = NbEtablissement / Population)
+
+nbEtablissementParHabitantParRegion$Population <- NULL
+nbEtablissementParHabitantParRegion$NbEtablissement <- NULL
+
+# Affichage
+idxRegion <- match(FranceFormes$NAME_1, nbEtablissementParHabitantParRegion$NomRegion)
+FranceFormes$NbEtablissementParHabitant <- nbEtablissementParHabitantParRegion[idxRegion, "NbEtablissementParHabitant"]
+couleurs <- colorRampPalette(c('white', 'blue'))
+spplot(FranceFormes, "NbEtablissementParHabitant", col.regions=couleurs(30),  main=list(label="Nombre de cinéma pour 1 million d'habitant",cex=.8))
+```
+
+On remarque que la région Corse possède le plus de cinéma par habitant en France.
+Ce chiffre peut s'expliquer par la très faible population de la Corse par rapport aux autres régions.
+```{r RapportPopCorseAutreRegion, echo=FALSE}
+pop_moyenne_province <- mean(cinema_par_region_sans_IDF_Corse$Population)*1000000
+pop_corse = 0.261*1000000
+
+cat("La corse est en moyenne ", format_currency(pop_moyenne_province / pop_corse, ""), " fois moins peuplée que les autres régions de France (en omettant l'Île-De-France).")
+```
+```{r NbEtablissementParRegionParHabitantSansCorse, echo=FALSE}
+# Calcul nombre de cinéma par habitant par région
+nbEtablissementParHabitantParRegionSansCorse <- cinema %>%
+  dplyr::select(NomRegion, NbEtablissement, Population) %>%
+  group_by(NomRegion) %>%
+  summarise(NbEtablissement = sum(NbEtablissement), Population = sum(Population)) %>% 
+  mutate(NbEtablissementParHabitantSansCorse = NbEtablissement / Population) %>% 
+  subset(NomRegion != "Corse")
+
+nbEtablissementParHabitantParRegionSansCorse$Population <- NULL
+nbEtablissementParHabitantParRegionSansCorse$NbEtablissement <- NULL
+
+# Affichage
+idxRegion <- match(FranceFormes$NAME_1, nbEtablissementParHabitantParRegionSansCorse$NomRegion)
+FranceFormes$NbEtablissementParHabitantSansCorse <- nbEtablissementParHabitantParRegionSansCorse[idxRegion, "NbEtablissementParHabitantSansCorse"]
+couleurs <- colorRampPalette(c('white', 'blue'))
+spplot(FranceFormes, "NbEtablissementParHabitantSansCorse", col.regions=couleurs(30),  main=list(label="Nombre de cinéma pour 1 million d'habitant (sans la région Corse)",cex=.8))
+```
+
+On peut alors remarquer que les régions du Sud sont celles qui possèdent le plus de cinéma par rapport à leur population (avec la région Auvergne-Rhône-Alpes.
+
+## Les entrées
+```{r EntreesTotal, echo=FALSE}
+entrees_total <- sum(cinema_par_region$NbEntree)*1000000
+cat("Total des entrées en France", format_currency(entrees_total, ""), ".")
+```
+```{r NbEntreeParHabitant}
+nbEntreeParHabitantParRegion <- cinema_par_region %>% 
+  dplyr::select(NomRegion, Population, NbEntree) %>% 
+  mutate(NbEntreeParPersonnes = NbEntree / Population)
+
+nbEntreeParHabitantParRegion$Population <- NULL
+nbEntreeParHabitantParRegion$NbEntree <- NULL
+
+# Affichage
+idxRegion <- match(FranceFormes$NAME_1, nbEntreeParHabitantParRegion$NomRegion)
+FranceFormes$NbEntreeParPersonnes <- nbEntreeParHabitantParRegion[idxRegion, "NbEntreeParPersonnes"]
+couleurs <- colorRampPalette(c('white', 'brown'))
+spplot(FranceFormes, "NbEntreeParPersonnes", col.regions=couleurs(30),  main=list(label="Nombre d'entrées par habitant",cex=.8))
+```
+
+## Les recettes
+```{r RecettesTotal, echo=FALSE}
+recettes_total <- sum(cinema$Recettes)*1000000
+cat("Total des recettes en France", format_currency(recettes_total, "€"), ".")
+```
+```{r ClassementRecettes, echo=FALSE}
+classement_recettes <- cinema_par_region %>% 
+  dplyr::select(NomRegion, Recettes) %>% 
+  arrange(-Recettes) %>% 
+  rename(Region = NomRegion) %>% 
+  mutate(Recettes = format_currency(Recettes*1000000, "€"))
+
+kable(classement_recettes[1:5,], caption = "Les 5 régions les plus rentables")
+```
+
+```{r RépartitionRecettes, echo=FALSE}
+repartition_recettes <- cinema_par_region %>% 
+  dplyr::select(NomRegion, Recettes) %>% 
+  rename(Region = NomRegion) %>% 
+  mutate(PartRecettes = Recettes / sum(Recettes)) %>% 
+  mutate(Region = paste(Region, "(", round(PartRecettes*100, 1), "%)")) %>% 
+  arrange(PartRecettes)
+
+pie(repartition_recettes$PartRecettes, labels=repartition_recettes$Region, main = "Répartition des recettes", radius = 1, cex = 0.8)
+```
