@@ -1,9 +1,11 @@
 ---
-title: "Projet Data Camp: Cinema"
-output: html_document
+title: 'Projet Data Camp: Cinema'
+output:
+  pdf_document: default
+  html_document: default
 ---
 Master 2 Miage
-2021-2021
+2021-2022
 
 Alexis Sidate - Gabriel Jestin
 
@@ -15,14 +17,20 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(corrplot)
 library(cowplot)
 library(ggplot2)
-library(sqldf)
 library(tidyverse)
 library(raster)
 library(priceR)
 library(knitr)
 library(plotrix)
+library(ggrepel)
 
 cinema <- read.table(file="../data/cinema.csv", header=TRUE, sep=",", encoding="UTF-8")
+cinema2 <- read.table(file="../data/cinema2.csv", header = TRUE,sep=";", quote="")
+
+#Récupération des données carto graphique des départements de France
+departements <- getData(name="GADM", country="FRA", level=2)
+idx <- match(tolower(departements$NAME_2), tolower(cinema2$NomDep))
+cinema_sans_paris <- cinema2 %>%subset(NomDep != "PARIS")
 
 # Récupération des données carto graphique des régions de France
 FranceFormes <- getData(name="GADM", country="FRA", level=1)
@@ -52,9 +60,20 @@ cinema_par_region_sans_IDF <- cinema_par_region %>%
 
 ```
 
+## Population
+
+```{r PopulationFrancaise, echo=FALSE}
+departements$Population <- cinema2[idx, "Population"]
+couleurs <- colorRampPalette(c('white', 'yellow'))
+spplot(departements, "Population", col.regions=couleurs(30), main=list(label="Population (en millions d'habitants)",cex=.8))
+```
+
+Cette carte présente le nombre de cinéma par Région en France en 2002.
+Les zones les plus peuplées en France en 2002 étaient notamment situées dans les grandes villes (Paris, Lyon, Lille, Marseille ...).
+
 ## Nombre de cinémas
 
-```{r NbEtablissementParRegion, echo=FALSE}
+```{r NbEtablissementParRegion, echo=FALSE, out.width="50%"}
 # Calcul nombre d'établissement par Région
 nbEtablissementParRegion <- cinema %>%
   dplyr::select(NomRegion, NbEtablissement) %>%
@@ -64,12 +83,16 @@ nbEtablissementParRegion <- cinema %>%
 idxRegion <- match(FranceFormes$NAME_1, nbEtablissementParRegion$NomRegion)
 FranceFormes$NbEtablissement <- nbEtablissementParRegion[idxRegion, "NbEtablissement"]
 couleurs <- colorRampPalette(c('white', 'yellow'))
-spplot(FranceFormes, "NbEtablissement", col.regions=couleurs(30),  main=list(label="Nombre de cinéma",cex=.8))
+spplot(FranceFormes, "NbEtablissement", col.regions=couleurs(30),  main=list(label="Nombre de cinémas",cex=.8))
+
+departements$Communes <- cinema2[idx, "Communes"]
+couleurs <- colorRampPalette(c('white', 'red'))
+spplot(departements, "Communes", col.regions=couleurs(30), main=list(label="Nombre de communes équipées de cinémas",cex=.8))
 ```
 
-Le nombre de cinéma par région...
+La carte ci-dessus à gauche montre le nombre de cinémas par région, on peut voir qu'il y a plus de cinémas en Ile-De-France et dans la moitié Sud de le France. La carte de droite montre que ce ne sont pas forcément ces zones géographiques qui ont le plus de villes équipées de cinémas (le nord et le nord-ouest notamment), on peut donc deviner qu'il y a un grand nombre de cinémas situés dans les mêmes villes (notamment les grandes villes évoquées précédemment). 
 
-```{r NbEtablissementParRegionParHabitant, echo=FALSE}
+```{r NbEtablissementParRegionParHabitant, echo=FALSE, out.width="50%"}
 # Calcul nombre de cinéma par habitant par région
 nbEtablissementParHabitantParRegion <- cinema %>%
   dplyr::select(NomRegion, NbEtablissement, Population) %>%
@@ -84,18 +107,8 @@ nbEtablissementParHabitantParRegion$NbEtablissement <- NULL
 idxRegion <- match(FranceFormes$NAME_1, nbEtablissementParHabitantParRegion$NomRegion)
 FranceFormes$NbEtablissementParHabitant <- nbEtablissementParHabitantParRegion[idxRegion, "NbEtablissementParHabitant"]
 couleurs <- colorRampPalette(c('white', 'blue'))
-spplot(FranceFormes, "NbEtablissementParHabitant", col.regions=couleurs(30),  main=list(label="Nombre de cinéma pour 1 million d'habitant",cex=.8))
-```
+spplot(FranceFormes, "NbEtablissementParHabitant", col.regions=couleurs(30),  main=list(label="Nombre de cinémas pour 1 million d'habitants",cex=.8))
 
-On remarque que la région Corse possède le plus de cinéma par habitant en France.
-Ce chiffre peut s'expliquer par la très faible population de la Corse par rapport aux autres régions.
-```{r RapportPopCorseAutreRegion, echo=FALSE}
-pop_moyenne_province <- mean(cinema_par_region_sans_IDF_Corse$Population)*1000000
-pop_corse = 0.261*1000000
-
-cat("La corse est en moyenne ", format_currency(pop_moyenne_province / pop_corse, ""), " fois moins peuplée que les autres régions de France (en omettant l'Île-De-France).")
-```
-```{r NbEtablissementParRegionParHabitantSansCorse, echo=FALSE}
 # Calcul nombre de cinéma par habitant par région
 nbEtablissementParHabitantParRegionSansCorse <- cinema %>%
   dplyr::select(NomRegion, NbEtablissement, Population) %>%
@@ -108,18 +121,24 @@ nbEtablissementParHabitantParRegionSansCorse$Population <- NULL
 nbEtablissementParHabitantParRegionSansCorse$NbEtablissement <- NULL
 
 # Affichage
-idxRegion <- match(FranceFormes$NAME_1, nbEtablissementParHabitantParRegionSansCorse$NomRegion)
+
 FranceFormes$NbEtablissementParHabitantSansCorse <- nbEtablissementParHabitantParRegionSansCorse[idxRegion, "NbEtablissementParHabitantSansCorse"]
 couleurs <- colorRampPalette(c('white', 'blue'))
-spplot(FranceFormes, "NbEtablissementParHabitantSansCorse", col.regions=couleurs(30),  main=list(label="Nombre de cinéma pour 1 million d'habitant (sans la région Corse)",cex=.8))
+spplot(FranceFormes, "NbEtablissementParHabitantSansCorse", col.regions=couleurs(30),  main=list(label="Nombre de cinémas pour 1 million d'habitants (sans la région Corse)",cex=.8))
 ```
 
-On peut alors remarquer que les régions du Sud sont celles qui possèdent le plus de cinéma par rapport à leur population (avec la région Auvergne-Rhône-Alpes.
+Sur la carte ci-dessus à droite, on remarque que la région Corse possède le plus de cinéma par rapport à son nombre d'habitant.
+Ce chiffre peut s'expliquer par la très faible population de celle-ci par rapport aux autres régions.
+La corse est environ **16 fois moins** peuplée que les autres régions de France (en omettant l'Île-De-France).
+Les cinémas installés là-bas sont probablement plus fréquentés par les toursites pendant la période estivale 
+
+Sur la seconde carte (sans la Corse), on peut remarquer que les régions du Sud sont celles qui possèdent le plus de cinémas par rapport à leur population (avec la région Auvergne-Rhône-Alpes en tête).
+Ce chiffre s'explique par le fait que les cinémas installés dans ces régions sont plus nombreux afin de couvrir la grande superficie de celles-ci. Ces cinémas possèdent alors moins de salles et de sièges qu'en Île-De-France car la population y est beaucoup moins concentrée.
 
 ## Les entrées
 ```{r EntreesTotal, echo=FALSE}
 entrees_total <- sum(cinema_par_region$NbEntree)*1000000
-cat("Total des entrées en France", format_currency(entrees_total, ""), ".")
+cat("Total des entrées en France en 2002 :", format_currency(entrees_total, ""), ".")
 ```
 ```{r NbEntreeParHabitant}
 nbEntreeParHabitantParRegion <- cinema_par_region %>% 
@@ -135,11 +154,36 @@ FranceFormes$NbEntreeParPersonnes <- nbEntreeParHabitantParRegion[idxRegion, "Nb
 couleurs <- colorRampPalette(c('white', 'brown'))
 spplot(FranceFormes, "NbEntreeParPersonnes", col.regions=couleurs(30),  main=list(label="Nombre d'entrées par habitant",cex=.8))
 ```
+Ci-dessus, on observe que les franciliens se rendent plus au cinema que dans les autres régions (plus de 5 fois par habitant en moyenne°.
+
+
+On peut voir ci-dessous une très forte domination au niveau des entrées par la région Ile-De-France qui peut facilement s'expliquer par la très forte population présente à Paris et en banlieue parisienne ou encore grâce au tourisme très élevé par rapport aux autres villes françaises.
+
+```{r Entrees, echo=FALSE, out.width="50%"}
+departements$Entrées <- cinema2[idx, "Entrées"]
+couleurs <- colorRampPalette(c('white', 'yellow'))
+spplot(departements, "Entrées", col.regions=couleurs(30), main=list(label="Nombre d'entrées (en millions)",cex=.8))
+
+departements$Entrées <- cinema_sans_paris[idx, "Entrées"]
+couleurs <- colorRampPalette(c('white', 'yellow'))
+spplot(departements, "Entrées", col.regions=couleurs(30), main=list(label="Nombre d'entrées (en millions) en omettant Paris",cex=.8))
+```
+
+Cette différence est encore plus visible lorsque compare le nombre d'entrées par département en incluant Paris ou non (voir cartes ci-dessus).
+
+```{r Fauteuils, echo=FALSE}
+departements$Fauteuils <- cinema_sans_paris[idx, "Fauteuils"]
+couleurs <- colorRampPalette(c('white', 'blue'))
+spplot(departements, "Fauteuils", col.regions=couleurs(30), main=list(label="Nombre de fauteuils en omettant Paris",cex=.8))
+```
+
+La carte ci-dessus du nombre de fauteuils est très similaire à la carte du nombre d'entrées, cependant elle diffère de la carte du nombre de communes équipées, on peut notamment voir la différence au niveau de la Bretagne, ceci peut s'expliquer par la densité de population moins élevée que dans d'autres régions, obligeant peut-être un plus grand nombre de villes à s'équiper de cinémas de plus petites tailles.
 
 ## Les recettes
+
 ```{r RecettesTotal, echo=FALSE}
 recettes_total <- sum(cinema$Recettes)*1000000
-cat("Total des recettes en France", format_currency(recettes_total, "€"), ".")
+cat("Total des recettes en France :", format_currency(recettes_total, "€"), ".")
 ```
 ```{r ClassementRecettes, echo=FALSE}
 classement_recettes <- cinema_par_region %>% 
@@ -151,7 +195,9 @@ classement_recettes <- cinema_par_region %>%
 kable(classement_recettes[1:5,], caption = "Les 5 régions les plus rentables")
 ```
 
-```{r RépartitionRecettes, echo=FALSE}
+Directement lié au nombre d'entrées par habitant, le total des recettes est donc naturellement le plus élevée dans la région Ile-De-France. Ci-dessous, le graphique de gauche met en évidence la part très conséquente des recettes qui sont faites en Île-De-France par rapport au reste du pays, à droite on observe que les recettes sont proportionnelles au nombre d'habitant, mais quand sont même beaucoup plus élevées Île-De-France. 
+
+```{r RépartitionRecettes, echo=FALSE, out.width="50%"}
 repartition_recettes <- cinema_par_region %>% 
   dplyr::select(NomRegion, Recettes) %>% 
   rename(Region = NomRegion) %>% 
@@ -160,4 +206,7 @@ repartition_recettes <- cinema_par_region %>%
   arrange(PartRecettes)
 
 pie(repartition_recettes$PartRecettes, labels=repartition_recettes$Region, main = "Répartition des recettes", radius = 1, cex = 0.8)
+
+ggplot(cinema_par_region,aes(Population,Recettes))+geom_point(color="red")+
+  geom_label_repel(aes(label = NomRegion), size=3, max.overlaps = Inf, segment.color = "black")
 ```

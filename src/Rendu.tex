@@ -1,0 +1,196 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\title{Projet Data Camp: Cinema}
+\author{}
+\date{\vspace{-2.5em}}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Projet Data Camp: Cinema},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\begin{document}
+\maketitle
+
+Master 2 Miage 2021-2022
+
+Alexis Sidate - Gabriel Jestin
+
+\hypertarget{population}{%
+\subsection{Population}\label{population}}
+
+\includegraphics{Rendu_files/figure-latex/PopulationFrancaise-1.pdf}
+
+Cette carte présente le nombre de cinéma par Région en France en 2002.
+Les zones les plus peuplées en France en 2002 étaient notamment situées
+dans les grandes villes (Paris, Lyon, Lille, Marseille \ldots).
+
+\hypertarget{nombre-de-cinuxe9mas}{%
+\subsection{Nombre de cinémas}\label{nombre-de-cinuxe9mas}}
+
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/NbEtablissementParRegion-1}
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/NbEtablissementParRegion-2}
+
+La carte ci-dessus à gauche montre le nombre de cinémas par région, on
+peut voir qu'il y a plus de cinémas en Ile-De-France et dans la moitié
+Sud de le France. La carte de droite montre que ce ne sont pas forcément
+ces zones géographiques qui ont le plus de villes équipées de cinémas
+(le nord et le nord-ouest notamment), on peut donc deviner qu'il y a un
+grand nombre de cinémas situés dans les mêmes villes (notamment les
+grandes villes évoquées précédemment).
+
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/NbEtablissementParRegionParHabitant-1}
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/NbEtablissementParRegionParHabitant-2}
+
+Sur la carte ci-dessus à droite, on remarque que la région Corse possède
+le plus de cinéma par rapport à son nombre d'habitant. Ce chiffre peut
+s'expliquer par la très faible population de celle-ci par rapport aux
+autres régions. La corse est environ \textbf{16 fois moins} peuplée que
+les autres régions de France (en omettant l'Île-De-France). Les cinémas
+installés là-bas sont probablement plus fréquentés par les toursites
+pendant la période estivale
+
+Sur la seconde carte (sans la Corse), on peut remarquer que les régions
+du Sud sont celles qui possèdent le plus de cinémas par rapport à leur
+population (avec la région Auvergne-Rhône-Alpes en tête). Ce chiffre
+s'explique par le fait que les cinémas installés dans ces régions sont
+plus nombreux afin de couvrir la grande superficie de celles-ci. Ces
+cinémas possèdent alors moins de salles et de sièges qu'en Île-De-France
+car la population y est beaucoup moins concentrée.
+
+\hypertarget{les-entruxe9es}{%
+\subsection{Les entrées}\label{les-entruxe9es}}
+
+\begin{verbatim}
+## Total des entrées en France en 2002 : 184,459,000 .
+\end{verbatim}
+
+\includegraphics{Rendu_files/figure-latex/NbEntreeParHabitant-1.pdf}
+Ci-dessus, on observe que les franciliens se rendent plus au cinema que
+dans les autres régions (plus de 5 fois par habitant en moyenne°.
+
+On peut voir ci-dessous une très forte domination au niveau des entrées
+par la région Ile-De-France qui peut facilement s'expliquer par la très
+forte population présente à Paris et en banlieue parisienne ou encore
+grâce au tourisme très élevé par rapport aux autres villes françaises.
+
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/Entrees-1}
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/Entrees-2}
+
+Cette différence est encore plus visible lorsque compare le nombre
+d'entrées par département en incluant Paris ou non (voir cartes
+ci-dessus).
+
+\includegraphics{Rendu_files/figure-latex/Fauteuils-1.pdf}
+
+La carte ci-dessus du nombre de fauteuils est très similaire à la carte
+du nombre d'entrées, cependant elle diffère de la carte du nombre de
+communes équipées, on peut notamment voir la différence au niveau de la
+Bretagne, ceci peut s'expliquer par la densité de population moins
+élevée que dans d'autres régions, obligeant peut-être un plus grand
+nombre de villes à s'équiper de cinémas de plus petites tailles.
+
+\hypertarget{les-recettes}{%
+\subsection{Les recettes}\label{les-recettes}}
+
+\begin{verbatim}
+## Total des recettes en France : €1,027,869,000 .
+\end{verbatim}
+
+\begin{longtable}[]{@{}ll@{}}
+\caption{Les 5 régions les plus rentables}\tabularnewline
+\toprule
+Region & Recettes \\
+\midrule
+\endfirsthead
+\toprule
+Region & Recettes \\
+\midrule
+\endhead
+Île-de-France & €332,885,000 \\
+Auvergne-Rhône-Alpes & €124,711,000 \\
+Provence-Alpes-Côte d'Azur & €90,640,000 \\
+Grand Est & €80,320,000 \\
+Occitanie & €74,578,000 \\
+\bottomrule
+\end{longtable}
+
+Directement lié au nombre d'entrées par habitant, le total des recettes
+est donc naturellement le plus élevée dans la région Ile-De-France.
+Ci-dessous, le graphique de gauche met en évidence la part très
+conséquente des recettes qui sont faites en Île-De-France par rapport au
+reste du pays, à droite on observe que les recettes sont
+proportionnelles au nombre d'habitant, mais quand sont même beaucoup
+plus élevées Île-De-France.
+
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/RépartitionRecettes-1}
+\includegraphics[width=0.5\linewidth]{Rendu_files/figure-latex/RépartitionRecettes-2}
+
+\end{document}
